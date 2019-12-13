@@ -5,8 +5,13 @@ const jwt = require('jwt-simple');
 module.exports = async (req, res) => {
     // Check for existing cart
     const { product_id } = req.params;
-    let { cart } = req;
-    let token = null;
+    const { quantity = 1 } = req.body;
+    let { cart, token } = req;
+
+    if(isNaN(quantity) || quantity < 1) {
+        res.status(422).send('Invalid quantity received');
+        return;
+    }
 
     // Checking if product_id is valid
     const [[product = null]] = await db.execute('SELECT id, name FROM products WHERE pid=?', [product_id]);
@@ -40,16 +45,19 @@ module.exports = async (req, res) => {
     // If product already in cart, increase quantity
     if(cartItem) {
         // Increase the quantity of the existing cartItem
+        await db.execute('UPDATE cartItems SET quantity = quantity + ? WHERE id = ?', [quantity, cartItem.id]);
     } else {
         // Else create cart item for product
         const [ itemResult ] = await db.execute(`
             INSERT INTO cartItems 
             (pid, cartId, productId, quantity)
             VALUES (UUID(), ?, ?, ?)
-        `, [cart.id, product.id, 1]);
+        `, [cart.id, product.id, quantity]);
     }
 
-    const message = `1 ${product.name} added to cart`;
+    const [ cartData ] = await db.query('SELECT * FROM cartItems AS ci WHERE ');
+
+    const message = `${quantity} ${product.name} added to cart`;
 
     res.send({
         cartToken: token,
