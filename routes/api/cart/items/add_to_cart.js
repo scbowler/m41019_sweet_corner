@@ -1,5 +1,6 @@
 const db = require('../../../../db');
 const cartJwt = require('../../../../config/cart_jwt.json');
+const { buildUrl, getCartTotals } = require('../../../../helpers');
 const jwt = require('jwt-simple');
 
 module.exports = async (req, res) => {
@@ -55,12 +56,30 @@ module.exports = async (req, res) => {
         `, [cart.id, product.id, quantity]);
     }
 
-    const [ cartData ] = await db.query('SELECT * FROM cartItems AS ci WHERE ');
+    const [[cartData]] = await db.query(`
+        SELECT c.pid AS cartId, ci.pid AS itemId, p.pid AS productId, p.cost AS 'each', ci.quantity, (cost * quantity) AS total, ci.createdAt AS added, p.name, i.altText, i.type, i.file FROM cartItems AS ci 
+	    JOIN cart AS c ON ci.cartId=c.id
+        JOIN products AS p ON ci.productId=p.id
+        JOIN images AS i ON i.productId=p.id
+        WHERE cartId=? AND ci.productId=? AND i.type="thumbnail"
+    `, [cart.id, product.id]);
+
+    const { cartId,  altText, file, type, ...item  } = cartData;
+
+    item.thumbnail = {
+        altText: altText,
+        url: buildUrl(req, type, file)
+    }
 
     const message = `${quantity} ${product.name} added to cart`;
 
+    const total = await getCartTotals(cart.id);
+
     res.send({
+        cartId: cartId,
         cartToken: token,
-        message: message
+        item: item,
+        message: message,
+        total: total
     });
 }
