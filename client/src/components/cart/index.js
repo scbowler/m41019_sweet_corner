@@ -48,11 +48,11 @@ class Cart extends Component {
                 </td>
                 <td className="product-name">{name}</td>
                 <td className="product-cost">
-                    <Money>{each}</Money>
+                    <Money>{parseFloat(each)}</Money>
                 </td>
                 <td className="product-quantity">{quantity}</td>
                 <td className="product-total">
-                    <Money>{total}</Money>
+                    <Money>{parseFloat(total)}</Money>
                 </td>
             </tr>
         );
@@ -104,7 +104,7 @@ class Cart extends Component {
                                     <td colSpan="3">Cart Totals:</td>
                                     <td>{totalItems}</td>
                                     <td>
-                                        <Money>{totalCost}</Money>
+                                        <Money>{parseFloat(totalCost)}</Money>
                                     </td>
                                 </tr>
                                 : null
